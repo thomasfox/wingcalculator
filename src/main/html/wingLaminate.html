@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>wingLaminate</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/wingLaminate.css">
+  </head>
+  <body>
+   <script src="js/wingLaminate.js" ></script> 
+    <div class="container">
+    <form>
+      <div class="mb-3 row">
+        <label for="youngsmodulus" class="col-sm-2 col-form-label">E-Modul</label>
+        <div class="col-sm-2">
+          <input id="youngsmodulus" class="form-control form-control-sm" value="1000000">
+        </div>
+        <div class="col-sm-2">
+          <span>N/mm^2</span>
+        </div>
+      </div>
+      <div class="mb-3 row">
+        <label for="totalweight" class="col-sm-2 col-form-label">Gesamtflächenbelastung</label>
+        <div class="col-sm-2">
+          <input id="totalweight" class="form-control form-control-sm" value="1200">
+        </div>
+        <div class="col-sm-2">
+          <span>N</span>
+        </div>
+      </div>
+      <div class="mb-3 row">
+        <label for="density" class="col-sm-2 col-form-label">Dichte</label>
+        <div class="col-sm-2">
+          <input id="density" class="form-control form-control-sm" value="1,5">
+        </div>
+        <div class="col-sm-2">
+          <span>g/cm^3</span>
+        </div>
+      </div>
+      <table class="table table-sm" id="table">
+        <thead>
+          <tr>
+            <th>
+               x
+            </th>
+            <th>
+               Profiltiefe
+            </th>
+            <th>
+               Profil
+            </th>
+            <th>
+               Trägheitsmoment<br/>2. Ordnung<br/>Profil
+            </th>
+            <th>
+               Dicke<br/>Schaumkern
+            </th>
+            <th>
+               Trägheitsmoment<br/>2. Ordnung<br/>Schaumkern
+            </th>
+            <th>
+               y
+            </th>
+            <th>
+               dy/dx
+            </th>
+          <tr>
+        </thead>
+        <tbody>
+          <tr id="tablerow-0">
+            <td>
+              <input id="x-0" type="text" value="0" class="form-control form-control-sm table-form"/> cm
+            </td>
+            <td>
+               <input id="chord-0" type="text" value="12" class="form-control form-control-sm table-form" onchange="crosssectionChanged(this)"/> cm
+            </td>
+            <td>
+               <select id="profile-0" class="form-control form-control-sm table-form" onchange="updateSelect(this);crosssectionChanged(this)">
+                 <option value=""></option>
+                 <option value="e224">E 224</option>
+                 <option value="n63014">NACA 63014</option>
+               </select>
+            </td>
+            <td>
+               <input id="iprofile-0" type="text" value="0" class="form-control form-control-sm table-form">m^4
+            </td>
+            <td>
+               <input id="corethickness-0" type="text" value="8" class="form-control form-control-sm table-form"/>mm
+            </td>
+            <td>
+               <input id="icore-0" type="text" class="form-control form-control-sm table-form"/>m^4
+            </td>
+            <td>
+               <span id="result-y-0">0</span>
+            </td>
+            <td>
+               <span id="result-dy-dx-0">0</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <button type="button" class="btn btn-secondary" onclick="addTableRow()">Spalte hinzufügen</button>
+    </form>
+    </div>
+  </body>
+</html>
