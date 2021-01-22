@@ -14,7 +14,7 @@
       <div class="mb-3 row">
         <label for="youngsmodulus" class="col-sm-2 col-form-label">E-Modul</label>
         <div class="col-sm-2">
-          <input id="youngsmodulus" class="form-control form-control-sm" value="1000000">
+          <input id="youngsModulus" class="form-control form-control-sm" value="1000000">
         </div>
         <div class="col-sm-2">
           <span>N/mm^2</span>
@@ -23,7 +23,7 @@
       <div class="mb-3 row">
         <label for="totalweight" class="col-sm-2 col-form-label">Gesamtflächenbelastung</label>
         <div class="col-sm-2">
-          <input id="totalweight" class="form-control form-control-sm" value="1200">
+          <input id="totalForce" class="form-control form-control-sm" value="1200">
         </div>
         <div class="col-sm-2">
           <span>N</span>
@@ -92,15 +92,16 @@
                <input id="icore-0" type="text" class="form-control form-control-sm table-form"/>m^4
             </td>
             <td>
-               <span id="result-y-0">0</span>
+               <span id="y-0">0</span>
             </td>
             <td>
-               <span id="result-dy-dx-0">0</span>
+               <span id="dy:dx-0">0</span>
             </td>
           </tr>
         </tbody>
       </table>
       <button type="button" class="btn btn-secondary" onclick="addTableRow()">Spalte hinzufügen</button>
+      <button type="button" class="btn btn-secondary" onclick="calculate()">Berechnen</button>
     </form>
     </div>
   </body>
