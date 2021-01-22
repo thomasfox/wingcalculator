@@ -23,7 +23,7 @@
       <div class="mb-3 row">
         <label for="totalweight" class="col-sm-2 col-form-label">Gesamtflächenbelastung</label>
         <div class="col-sm-2">
-          <input id="totalForce" class="form-control form-control-sm" value="1200">
+          <input id="totalForce" class="form-control form-control-sm" value="500">
         </div>
         <div class="col-sm-2">
           <span>N</span>
@@ -36,6 +36,15 @@
         </div>
         <div class="col-sm-2">
           <span>g/cm^3</span>
+        </div>
+      </div>
+      <div class="mb-3 row">
+        <label for="density" class="col-sm-2 col-form-label">Schrittweite Berechnung</label>
+        <div class="col-sm-2">
+          <input id="calculationStep" class="form-control form-control-sm" value="1">
+        </div>
+        <div class="col-sm-2">
+          <span>mm</span>
         </div>
       </div>
       <table class="table table-sm" id="table">
@@ -100,7 +109,8 @@
           </tr>
         </tbody>
       </table>
-      <button type="button" class="btn btn-secondary" onclick="addTableRow()">Spalte hinzufügen</button>
+      <button type="button" class="btn btn-secondary" onclick="addTableRow()">Zeile hinzufügen</button>
+      <button type="button" class="btn btn-secondary" onclick="removeLastTableRow()">Letzte Zeile löschen</button>
       <button type="button" class="btn btn-secondary" onclick="calculate()">Berechnen</button>
     </form>
     </div>
