@@ -7,15 +7,33 @@ let normalizedIMap = new Map([
 function crosssectionChanged(inputElement)
 {
 	let tableRow = inputElement.id.split("-")[1];
-	let profile = document.getElementById('profile-' + tableRow).value;
-	if (profile)
+	let profileName = document.getElementById('profile-' + tableRow).value;
+	if (profileName)
 	{
-		let normalizedI=parseFloat(normalizedIMap.get(profile));
-		let chord = parseFloat(document.getElementById('chord-' + tableRow).value)/100;
-		if (chord) 
+		let cutoffEnd = Number(document.getElementById('cutoffEnd-' + tableRow).value)/1000;
+		let chord = Number(document.getElementById('chord-' + tableRow).value)/100;
+		console.debug("cutoffEnd: " + cutoffEnd + " chord: " + chord);
+		if (!isNaN(chord) && !isNaN(cutoffEnd)) 
 		{
-			let i=normalizedI * chord * chord * chord * chord;
+			let normalizedCutoffEnd = cutoffEnd/chord
+			console.debug("normalizedCutoffEnd: " + normalizedCutoffEnd);
+			let profile = window.profiles.get(profileName);
+			let normalizedI = profile.secondMomentOfArea(normalizedCutoffEnd);
+			let i = normalizedI * chord * chord * chord * chord;
 			document.getElementById('iprofile-' + tableRow).value = i.toPrecision(3);
+			let thickness = profile.thickness()*chord*1000;
+			console.debug("thickness: " + profile.thickness() + ":" + thickness);
+			document.getElementById('thickness-' + tableRow).innerHTML = thickness.toFixed(1) + " mm";
+		}
+		let foamCoreThickness = Number(document.getElementById('corethickness-' + tableRow).value)/1000;
+		if (!isNaN(chord) && !isNaN(foamCoreThickness)) 
+		{
+			let normalizedFoamCoreThickness = foamCoreThickness/chord
+			console.debug("normalizedFoamCoreThickness: " + normalizedFoamCoreThickness);
+			let profile = window.profiles.get(profileName);
+			let normalizedI = profile.secondMomentOfAreaOfFoamCore(normalizedFoamCoreThickness);
+			let i = normalizedI * chord * chord * chord * chord;
+			document.getElementById('icore-' + tableRow).value = i.toPrecision(3);
 		}
 	}
 }
@@ -90,23 +108,18 @@ function setNewRowIndex(elementId, newRowIndex)
 }
 
 
-function calculateTorque(result, x, map)
-{
-	
-}
-
 function calculate()
 {
 	let tbodyElement = document.getElementById('table').getElementsByTagName('tbody')[0];
 	let rowElements = tbodyElement.getElementsByTagName('tr');
-	let xMax = parseFloat(document.getElementById("x-" + (rowElements.length - 1)).value)/100; // in m
+	let xMax = Number(document.getElementById("x-" + (rowElements.length - 1)).value)/100; // in m
 	console.debug("xMax=" + xMax + (typeof xMax));
 	
 	let calculated = new Map();
 	let xIndex = xMax;
 	let totalArea = 0;
 	calculationStep
-	let step = parseFloat(document.getElementById("calculationStep").value)/1000; // m
+	let step = Number(document.getElementById("calculationStep").value)/1000; // m
 	console.debug("step=" + step + (typeof step));
 	for (i = rowElements.length -1; i >=1; i--)
 	{
@@ -114,8 +127,8 @@ function calculate()
 		let rowIndex = getRowIndex(rowElement.id);
 		let nextRowIndex = i - 1;
 		let nextRowElement = document.getElementById(setNewRowIndex(rowElement.id, nextRowIndex));
-		let x =  parseFloat(document.getElementById("x-" + rowIndex).value)/100;
-		let xNext = parseFloat(document.getElementById("x-" + nextRowIndex).value)/100;
+		let x =  Number(document.getElementById("x-" + rowIndex).value)/100;
+		let xNext = Number(document.getElementById("x-" + nextRowIndex).value)/100;
 		console.debug("x=" + x + (typeof x));
 		console.debug("xNext=" + xNext + (typeof xNext));
 		if ((typeof x)!='number' || (typeof xNext)!='number')
@@ -128,8 +141,8 @@ function calculate()
 			alert("Die x-Werte müssen aufsteigend sein");
 			break;
 		}
-		let chord = parseFloat(document.getElementById("chord-" + rowIndex).value)/100;
-		let chordNext = parseFloat(document.getElementById("chord-" + nextRowIndex).value)/100;
+		let chord = Number(document.getElementById("chord-" + rowIndex).value)/100;
+		let chordNext = Number(document.getElementById("chord-" + nextRowIndex).value)/100;
 		if ((typeof chord)!='number' || (typeof chordNext)!='number')
 		{
 			alert("Die Profiltiefe-Werte müssen gefüllt sein");
@@ -141,9 +154,9 @@ function calculate()
 			break;
 		}
 		
-		let iProfile = parseFloat(document.getElementById("iprofile-" + rowIndex).value);
+		let iProfile = Number(document.getElementById("iprofile-" + rowIndex).value);
 		console.debug("iProfile=" + iProfile + (typeof iProfile));
-		let iCore = parseFloat(document.getElementById("icore-" + rowIndex).value);
+		let iCore = Number(document.getElementById("icore-" + rowIndex).value);
 		let iTotal;
 		if (iCore)
 		{
@@ -156,9 +169,9 @@ function calculate()
 		console.debug("iTotal=" + iTotal+ (typeof iTotal));
 		let iTotal4throot=Math.sqrt(Math.sqrt(iTotal));
 		
-		let iProfileNext = parseFloat(document.getElementById("iprofile-" + nextRowIndex).value);
+		let iProfileNext = Number(document.getElementById("iprofile-" + nextRowIndex).value);
 		console.debug("iProfileNext=" + iProfileNext + (typeof iProfileNext));
-		let iCoreNext = parseFloat(document.getElementById("icore-" + nextRowIndex).value);
+		let iCoreNext = Number(document.getElementById("icore-" + nextRowIndex).value);
 		let iTotalNext;
 		if (iCoreNext)
 		{
@@ -194,9 +207,10 @@ function calculate()
 		}
 		console.debug("totalArea=" + totalArea + (typeof totalArea));
 	}
+	document.getElementById("totalArea").innerHTML = (totalArea * 10000).toFixed(2) + " cm^2";
 	
-	let totalForce = parseFloat(document.getElementById("totalForce").value);
-	let e = parseFloat(document.getElementById("youngsModulus").value)*1000000;
+	let totalForce = Number(document.getElementById("totalForce").value);
+	let e = Number(document.getElementById("youngsModulus").value)*1000000;
 	let outerArea = 0;
 	let outerCenterOfForce = null
 	let totalIncreaseOfSlope = 0;
@@ -250,7 +264,7 @@ function calculate()
 	{
 		let rowIndex = getRowIndex(rowElement.id);
 		console.debug("rowIndex=" + rowIndex + (typeof rowIndex));
-		let x = parseFloat(document.getElementById("x-" + rowIndex).value)/100;
+		let x = Number(document.getElementById("x-" + rowIndex).value)/100;
 		let xStepNextLower = -Number.MAX_SAFE_INTEGER;
 		let xStepNextUpper = Number.MAX_SAFE_INTEGER;
 		for (xStep of calculated.keys())
@@ -307,11 +321,11 @@ function calculate()
 			continue;
 		}
 		console.info("row=" + rowIndex);
-		let x = parseFloat(document.getElementById("x-" + rowIndex).value);
+		let x = Number(document.getElementById("x-" + rowIndex).value);
 		console.info("x=" + x + (typeof x));
-		let iProfile = parseFloat(document.getElementById("iprofile-" + rowIndex).value);
+		let iProfile = Number(document.getElementById("iprofile-" + rowIndex).value);
 		console.info("iProfile=" + iProfile + (typeof iProfile));
-		let iCore = parseFloat(document.getElementById("icore-" + rowIndex).value);
+		let iCore = Number(document.getElementById("icore-" + rowIndex).value);
 		let iTotal;
 		if (iCore)
 		{
@@ -323,11 +337,11 @@ function calculate()
 		}
 		console.info("iTotal=" + iTotal+ (typeof iTotal));
 		
-		let xPrevious = parseFloat(document.getElementById("x-" + previousRowIndex).value);
+		let xPrevious = Number(document.getElementById("x-" + previousRowIndex).value);
 		console.info("xPrevious=" + xPrevious+ (typeof xPrevious));
-		let iProfilePrevious = parseFloat(document.getElementById("iprofile-" + previousRowIndex).value);
+		let iProfilePrevious = Number(document.getElementById("iprofile-" + previousRowIndex).value);
 		console.info("iProfilePrevious=" + iProfilePrevious + (typeof iProfilePrevious));
-		let iCorePrevious = parseFloat(document.getElementById("icore-" + previousRowIndex).value);
+		let iCorePrevious = Number(document.getElementById("icore-" + previousRowIndex).value);
 		let iTotalPrevious;
 		if (iCorePrevious)
 		{
@@ -351,10 +365,10 @@ function calculate()
 		console.info("iTotal" + iTotal + (typeof iTotal));
 		
 		// TODO aus Flächenkraft berechnen
-		let q = parseFloat(document.getElementById("totalForce").value);
+		let q = Number(document.getElementById("totalForce").value);
 		console.info("q=" + q + (typeof q));
 		
-		let e = parseFloat(document.getElementById("youngsModulus").value)*1000000;
+		let e = Number(document.getElementById("youngsModulus").value)*1000000;
 		console.info("e=" + e + (typeof e));
 		let l = (x - xPrevious)/100;
 		console.info("l=" + l + (typeof l));
@@ -363,4 +377,76 @@ function calculate()
 		console.info("y=" + y);
 	}
 	
+}
+
+function handleProfileUpload(uploadElement)
+{
+	const uploadedFile = uploadElement.files[0];
+	let name = uploadedFile.name;
+	if (!name.endsWith(".dat"))
+	{
+		alert("Please upload a .dat file");
+		return;
+	}
+	name = name.substring(0, name.length - 4);
+	const reader = new FileReader();
+	reader.onload = (function(file) { return function(e) { storeProfile(name,e.target.result); }; })(uploadedFile);
+	reader.readAsText(uploadedFile);
+}
+
+function storeProfile(name, datContent)
+{
+	const lines = datContent.split("\n");
+	let firstline = true;
+	let profileCoordinates = [];
+	for (line of lines)
+	{
+		if (firstline)
+		{
+			firstline = false;
+			continue;
+		}
+		if (!line)
+		{
+			continue;
+		}
+		let coordinates = line.trim().split(/\s+/);
+		console.log(coordinates.length);
+		if (coordinates.length != 2)
+		{
+			alert("Wrong line in .dat file: " + line);
+			return;
+		}
+		let x = Number(coordinates[0]);
+		if (isNaN(x))
+		{
+			alert("Wrong first number in .dat file: " + line + ":" + coordinates[0]);
+			return;
+		}
+		let y = Number(coordinates[1]);
+		if (isNaN(y))
+		{
+			alert("Wrong second number in .dat file: " + line + ":" + coordinates[1]);
+			return;
+		}
+		profileCoordinates.push([x, y]);
+	}
+	if (!window.profiles)
+	{
+		window.profiles = new Map();
+	}
+	window.profiles.set(name, new Profile(name, profileCoordinates));
+	
+	let tbodyElement = document.getElementById('table').getElementsByTagName('tbody')[0];
+	let rowElements = tbodyElement.getElementsByTagName('tr');
+	for (rowElement of rowElements)
+	{
+		let rowIndex = getRowIndex(rowElement.id);
+		let profileElement = document.getElementById('profile-' + rowIndex);
+		let option = document.createElement("option");
+		option.setAttribute("value", name);
+		option.innerHTML = name
+		profileElement.appendChild(option);
+	}
+    console.log(window.profiles.get(name).secondMomentOfArea(0));
 }

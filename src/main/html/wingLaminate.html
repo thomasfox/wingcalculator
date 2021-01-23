@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="css/wingLaminate.css">
   </head>
   <body>
+   <script src="js/profile.js" ></script> 
    <script src="js/wingLaminate.js" ></script> 
     <div class="container">
     <form>
@@ -47,6 +48,12 @@
           <span>mm</span>
         </div>
       </div>
+      <div class="mb-3 row">
+        <label for="density" class="col-sm-2 col-form-label">Profil laden</label>
+        <div class="col-sm-3">
+          <input id="profile" type="file" class="form-control form-control-sm" onchange="handleProfileUpload(this)">
+        </div>
+      </div>
       <table class="table table-sm" id="table">
         <thead>
           <tr>
@@ -58,6 +65,9 @@
             </th>
             <th>
                Profil
+            </th>
+            <th>
+               Dicke<br/>Endleiste<br/>ohne Verstärkung
             </th>
             <th>
                Trägheitsmoment<br/>2. Ordnung<br/>Profil
@@ -74,6 +84,9 @@
             <th>
                dy/dx
             </th>
+            <th>
+               Dicke
+            </th>
           <tr>
         </thead>
         <tbody>
@@ -87,24 +100,28 @@
             <td>
                <select id="profile-0" class="form-control form-control-sm table-form" onchange="updateSelect(this);crosssectionChanged(this)">
                  <option value=""></option>
-                 <option value="e224">E 224</option>
-                 <option value="n63014">NACA 63014</option>
                </select>
+            </td>
+            <td>
+               <input id="cutoffEnd-0" type="text" value="0" class="form-control form-control-sm table-form" onchange="crosssectionChanged(this)">mm
             </td>
             <td>
                <input id="iprofile-0" type="text" value="0" class="form-control form-control-sm table-form">m^4
             </td>
             <td>
-               <input id="corethickness-0" type="text" value="8" class="form-control form-control-sm table-form"/>mm
+               <input id="corethickness-0" type="text" value="8" class="form-control form-control-sm table-form"  onchange="crosssectionChanged(this)"/>mm
             </td>
             <td>
                <input id="icore-0" type="text" class="form-control form-control-sm table-form"/>m^4
             </td>
             <td>
-               <span id="y-0">0</span>
+               <span id="y-0"></span>
             </td>
             <td>
-               <span id="dy:dx-0">0</span>
+               <span id="dy:dx-0"></span>
+            </td>
+            <td>
+               <span id="thickness-0"></span>
             </td>
           </tr>
         </tbody>
@@ -113,6 +130,14 @@
       <button type="button" class="btn btn-secondary" onclick="removeLastTableRow()">Letzte Zeile löschen</button>
       <button type="button" class="btn btn-secondary" onclick="calculate()">Berechnen</button>
     </form>
+      <div class="mb-3 row">
+        <label for="totalarea" class="col-sm-2 col-form-label">Fläche</label>
+        <div class="col-sm-2">
+          <span id="totalArea"></span>
+        </div>
+      </div>
+    
     </div>
+    
   </body>
 </html>
