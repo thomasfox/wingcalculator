@@ -22,7 +22,7 @@ function crossSectionChanged(inputElement)
 			let profile = window.profiles.get(profileName);
 			let normalizedI = profile.secondMomentOfArea(normalizedCutoffEnd);
 			let i = normalizedI * chord * chord * chord * chord;
-			setResultToInputElement("iprofile", tableRow, i.toPrecision(3));
+			setResultToSpanElement("iprofile", tableRow, i.toPrecision(3) + "m<sup>4</sup>");
 			let thickness = profile.thickness()*chord*1000;
 			console.debug("thickness normalized: " + profile.thickness() + " scaled:" + thickness);
 			setResultToSpanElement("thickness", tableRow, thickness.toFixed(1) + " mm");
@@ -36,7 +36,7 @@ function crossSectionChanged(inputElement)
 			let profile = window.profiles.get(profileName);
 			let normalizedI = profile.secondMomentOfAreaOfFoamCore(normalizedFoamCoreThickness);
 			let i = normalizedI * chord * chord * chord * chord;
-			setResultToInputElement("icore", tableRow, i.toPrecision(3));
+			setResultToSpanElement("icore", tableRow, i.toPrecision(3) + "m<sup>4</sup>");
 			foamCoreCrossSection = profile.crossSectionOfFoamCore(normalizedFoamCoreThickness)*chord*chord*1000*1000;
 		}
 		let crossSection = profileCrossSection;
@@ -161,7 +161,7 @@ function calculate()
 	let calculated = new Map();
 	let xIndex = xMax;
 	let totalArea = 0;
-	calculationStep
+	let totalVolume = 0;
 	let step = getNumberFromInputElement("calculationStep")/1000; // m
 	console.debug("step=" + step + (typeof step));
 	for (i = rowElements.length - 1; i >= 1; i--)
@@ -199,40 +199,41 @@ function calculate()
 			return;
 		}
 		
-		let iProfile = getNumberFromInputElement("iprofile", rowIndex);
-		console.debug("iProfile=" + iProfile + (typeof iProfile));
-		let iCore = getNumberFromInputElement("icore",rowIndex);
-		let iTotal;
-		if (iCore)
-		{
-			iTotal = iProfile - iCore;
-		}
-		else
-		{
-			iTotal = iProfile;
-		}
-		if (!iTotal)
-		{
-			alert("Die Flächenträgheitsmomente des Profils müssen gefüllt und größer als 0 sein. Laden Sie ein Profil hoch und wählen es in der Profilauswahl aus, oder geben Sie manuell die Trägheitsmomente ein.");
-			return;
-		}
-		console.debug("iTotal=" + iTotal+ (typeof iTotal));
-		let iTotal4throot=Math.sqrt(Math.sqrt(iTotal));
+		let cutoffEnd = getNumberFromInputElement("cutoffEnd", rowIndex)/1000;
+		let cutoffEndNext = getNumberFromInputElement("cutoffEnd", nextRowIndex)/1000;
+		console.debug("cutoffEnd: " + cutoffEnd + " cutoffEndNext: " + cutoffEndNext);
+		let profileCrossSection = null;
+		let foamCoreCrossSection = null;
 		
-		let iProfileNext = getNumberFromInputElement("iprofile", nextRowIndex);
-		console.debug("iProfileNext=" + iProfileNext + (typeof iProfileNext));
-		let iCoreNext = getNumberFromInputElement("icore", nextRowIndex);
-		let iTotalNext;
-		if (iCoreNext)
+		if (isNaN(cutoffEnd) || isNaN(cutoffEndNext)) 
 		{
-			iTotalNext = iProfileNext - iCoreNext;
+			alert("Die Dicke der Endleiste muss gesetzt sein");
 		}
-		else
+		if (cutoffEnd < 0  || cutoffEndNext < 0) 
 		{
-			iTotalNext = iProfileNext;
+			alert("Die Dicke der Endleiste muss >= 0 sein");
 		}
-		console.debug("iTotalNext=" + iTotalNext + (typeof iTotalNext));
-		let iTotal4throotNext=Math.sqrt(Math.sqrt(iTotalNext));
+
+		let foamCoreThickness = getNumberFromInputElement("corethickness", rowIndex)/1000;
+		let foamCoreThicknessNext = getNumberFromInputElement("corethickness", nextRowIndex)/1000;
+		if (isNaN(foamCoreThickness) || isNaN(foamCoreThicknessNext)) 
+		{
+			alert("Die Dicke des Schaumkerns muss gesetzt sein");
+		}
+		if (foamCoreThickness < 0  || foamCoreThicknessNext < 0) 
+		{
+			alert("Die Dicke des Schaumkerns muss >= 0 sein");
+		}
+		
+		let profileName = document.getElementById("profile-" + rowIndex).value;
+		let profile = window.profiles.get(profileName);
+		let profileNameNext = document.getElementById("profile-" + nextRowIndex).value;
+		let profileNext = window.profiles.get(profileNameNext);
+		if (!profile || !profileNext) 
+		{
+			alert("Die Profile müssen gesetzt sein");
+		}
+
 	
 		while (xIndex - step >= xNext - 0.001)
 		{
@@ -246,18 +247,38 @@ function calculate()
 			calculated.get(xHalfStep)["area"] = area;
 			totalArea += area;
 			
-			// We assume that the change in dimensions between x and xNext is a linear one.
-			// As iTotal rises as the 4th power of dimensions, we assume a linear change 
-			// in the 4th root of iTotal
-			let iTotal4throotAtHalfStep =(iTotal4throot * (xHalfStep - xNext) + iTotal4throotNext*(x - xHalfStep))/(x - xNext);
-			let iTotalAtHalfStep=iTotal4throotAtHalfStep*iTotal4throotAtHalfStep*iTotal4throotAtHalfStep*iTotal4throotAtHalfStep;
-			calculated.get(xHalfStep)["iTotal"] = iTotalAtHalfStep;
+			let cutoffEndAtHalfStep =  (cutoffEnd * (xHalfStep - xNext) + cutoffEndNext*(x - xHalfStep))/(x - xNext);
+			calculated.get(xHalfStep)["cutoffEnd"] = cutoffEndAtHalfStep;
+
+			let iProfileAtHalfStep = profile.secondMomentOfArea(cutoffEndAtHalfStep/chordAtHalfStep) * chordAtHalfStep * chordAtHalfStep * chordAtHalfStep * chordAtHalfStep;
+			calculated.get(xHalfStep)["iProfile"] = iProfileAtHalfStep;
+			
+			let foamCoreThicknessAtHalfStep =  (foamCoreThickness * (xHalfStep - xNext) + foamCoreThicknessNext*(x - xHalfStep))/(x - xNext);
+			calculated.get(xHalfStep)["foamCoreThickness"] = foamCoreThicknessAtHalfStep;
+
+			let iCoreAtHalfStep =  profile.secondMomentOfAreaOfFoamCore(foamCoreThicknessAtHalfStep/chordAtHalfStep) * chordAtHalfStep * chordAtHalfStep * chordAtHalfStep * chordAtHalfStep;
+			calculated.get(xHalfStep)["iCore"] = iCoreAtHalfStep;
+			
+			calculated.get(xHalfStep)["iTotal"] = iProfileAtHalfStep - iCoreAtHalfStep;
+
+			let profileCrossSection = profile.crossSection(cutoffEndAtHalfStep/chordAtHalfStep)*chordAtHalfStep*chordAtHalfStep;
+			calculated.get(xHalfStep)["crossSectionProfile"] = profileCrossSection;
+
+			let foamCoreCrossSection = profile.crossSectionOfFoamCore(foamCoreThicknessAtHalfStep/chordAtHalfStep)*chordAtHalfStep*chordAtHalfStep;
+			calculated.get(xHalfStep)["crossSectionCore"] = foamCoreCrossSection;
+
+			let totalCrossSection = profileCrossSection - foamCoreCrossSection;
+			calculated.get(xHalfStep)["crossSectionTotal"] = totalCrossSection;
+
+			totalVolume += totalCrossSection * step;
 			
 			xIndex -= step
 		}
 		console.debug("totalArea=" + totalArea + (typeof totalArea));
+		console.debug("totalVolume=" + totalVolume + (typeof totalVolume));
 	}
-	document.getElementById("totalArea").innerHTML = (totalArea * 10000).toFixed(2) + " cm^2";
+	document.getElementById("totalArea").innerHTML = (totalArea * 10000).toFixed(2) + " cm<sup>2</sup>";
+	document.getElementById("totalVolume").innerHTML = (totalVolume * 1000000).toFixed(2) + " cm<sup>3</sup>";
 	
 	let totalForce = getNumberFromInputElement("totalForce");
 	let e = getNumberFromInputElement("youngsModulus")*1000000;
@@ -360,67 +381,6 @@ function calculate()
 		document.getElementById("y-" + rowIndex).innerHTML = (y*1000).toFixed(2) + " mm";
 		document.getElementById("dy:dx-" + rowIndex).innerHTML = (slope*1000).toFixed(2) + " mm/m";
 	}
-
-	for (rowElement of rowElements)
-	{
-		let rowIndex = getRowIndex(rowElement.id);
-		let previousRowIndex = parseInt(rowIndex) - 1;
-		let previousRowElement = document.getElementById(setNewRowIndex(rowElement.id, previousRowIndex));
-		if (!previousRowElement)
-		{
-			continue;
-		}
-		console.info("row=" + rowIndex);
-		let x = Number(document.getElementById("x-" + rowIndex).value);
-		console.info("x=" + x + (typeof x));
-		let iProfile = Number(document.getElementById("iprofile-" + rowIndex).value);
-		console.info("iProfile=" + iProfile + (typeof iProfile));
-		let iCore = Number(document.getElementById("icore-" + rowIndex).value);
-		let iTotal;
-		if (iCore)
-		{
-			iTotal = iProfile - iCore;
-		}
-		else
-		{
-			iTotal = iProfile;
-		}
-		console.info("iTotal=" + iTotal+ (typeof iTotal));
-		
-		let xPrevious = Number(document.getElementById("x-" + previousRowIndex).value);
-		console.info("xPrevious=" + xPrevious+ (typeof xPrevious));
-		let iProfilePrevious = Number(document.getElementById("iprofile-" + previousRowIndex).value);
-		console.info("iProfilePrevious=" + iProfilePrevious + (typeof iProfilePrevious));
-		let iCorePrevious = Number(document.getElementById("icore-" + previousRowIndex).value);
-		let iTotalPrevious;
-		if (iCorePrevious)
-		{
-			iTotalPrevious = iProfilePrevious - iCorePrevious;
-		}
-		else
-		{
-			iTotalPrevious = iProfilePrevious;
-		}
-		console.info("iTotalPrevious=" + iTotalPrevious + (typeof iTotalPrevious));
-		
-	
-		// TODO extrapolate
-		iTotal = (iTotal + iTotalPrevious) / 2
-		console.info("iTotal" + iTotal + (typeof iTotal));
-		
-		// TODO aus Flächenkraft berechnen
-		let q = Number(document.getElementById("totalForce").value);
-		console.info("q=" + q + (typeof q));
-		
-		let e = Number(document.getElementById("youngsModulus").value)*1000000;
-		console.info("e=" + e + (typeof e));
-		let l = (x - xPrevious)/100;
-		console.info("l=" + l + (typeof l));
-	
-		let y = q*l*l*l/(8*e*iTotal);
-		console.info("y=" + y);
-	}
-	
 }
 
 function handleProfileUpload(uploadElement)

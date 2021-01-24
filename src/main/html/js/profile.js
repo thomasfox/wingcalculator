@@ -205,7 +205,7 @@ class Profile
 	
 	secondMomentOfArea(cutoffTailAtThickness)
 	{
-		console.debug("cutoffTailAtThickness:" + cutoffTailAtThickness)
+		//console.debug("cutoffTailAtThickness:" + cutoffTailAtThickness)
 		let balanceY = this.balancePoint(cutoffTailAtThickness)[1];
 		let result = 0;
 		let xStep = 1 / this.CALCULATION_STEPS;
@@ -218,12 +218,12 @@ class Profile
 			//console.debug("thickness: " + thickness);
 			if (! thicknessReached && thickness > cutoffTailAtThickness)
 			{
-				console.debug("cutoffTailAtThickness first reached at " + x)
+				//console.debug("cutoffTailAtThickness first reached at " + x)
 				thicknessReached = true; 
 			}
 			else if (thicknessReached && thickness < cutoffTailAtThickness)
 			{
-				console.debug("cutoffTailAtThickness second reached at " + x)
+				//console.debug("cutoffTailAtThickness second reached at " + x)
 				break;
 			}
 			let distance1FromCenter = (balanceY - minY);
@@ -292,7 +292,7 @@ class Profile
 				{
 					foamCoreMinY = minY + (thickness - foamCoreThickness)/2;
 					foamCoreMaxY = maxY - (thickness - foamCoreThickness)/2;
-					console.debug("foamCoreMinY:" + foamCoreMinY + " foamCoreMaxY:" + foamCoreMaxY);
+					//console.debug("foamCoreMinY:" + foamCoreMinY + " foamCoreMaxY:" + foamCoreMaxY);
 				}
 				thickness = foamCoreThickness; 
 			}
@@ -333,7 +333,7 @@ class Profile
 				{
 					foamCoreMinY = minY + (thickness - foamCoreThickness)/2;
 					foamCoreMaxY = maxY - (thickness - foamCoreThickness)/2;
-					console.debug("foamCoreMinY:" + foamCoreMinY + " foamCoreMaxY:" + foamCoreMaxY);
+					//console.debug("foamCoreMinY:" + foamCoreMinY + " foamCoreMaxY:" + foamCoreMaxY);
 				}
 				thickness = foamCoreThickness; 
 			}
@@ -357,7 +357,7 @@ class Profile
 		{
 			return 0;
 		}
-		console.debug("foamCoreThickness:" + foamCoreThickness)
+		//console.debug("foamCoreThickness:" + foamCoreThickness)
 		let balanceY = this.balancePointOfFoamCore(foamCoreThickness)[1];
 		let result = 0;
 		let xStep = 1 / this.CALCULATION_STEPS;

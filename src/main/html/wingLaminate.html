@@ -9,7 +9,7 @@
   </head>
   <body>
     <script src="js/profile.js" ></script> 
-    <script src="js/wingLaminate.js" ></script> 
+    <script src="js/wingLaminate.js" ></script>
     <div class="text-center pt-3 pb-3">
       <h3>Durchbiegung eines Flügels</h3>
     </div>
@@ -60,19 +60,19 @@
                Dicke<br/>Endleiste<br/>ohne Verstärkung
             </th>
             <th>
-               Flächenträgheits-<br/>moment<br/>Profil
-            </th>
-            <th>
                Dicke<br/>Schaumkern
-            </th>
-            <th>
-               Flächenträgheits-<br/>moment<br/>Schaumkern
             </th>
             <th>
                y
             </th>
             <th>
                dy/dx
+            </th>
+            <th>
+               Flächenträgheits-<br/>moment<br/>Profil
+            </th>
+            <th>
+               Flächenträgheits-<br/>moment<br/>Schaumkern
             </th>
             <th>
                Dicke
@@ -101,19 +101,19 @@
                <input id="cutoffEnd-0" type="text" value="0" class="form-control form-control-sm table-form" onchange="crossSectionChanged(this)">mm
             </td>
             <td>
-               <input id="iprofile-0" type="text" value="" class="form-control form-control-sm table-form">m<sup>4</sup>
-            </td>
-            <td>
                <input id="corethickness-0" type="text" value="0" class="form-control form-control-sm table-form"  onchange="crossSectionChanged(this)"/>mm
-            </td>
-            <td>
-               <input id="icore-0" type="text" class="form-control form-control-sm table-form"/>m<sup>4</sup>
             </td>
             <td>
                <span id="y-0"></span>
             </td>
             <td>
                <span id="dy:dx-0"></span>
+            </td>
+            <td>
+               <span id="iprofile-0"></span>
+            </td>
+            <td>
+               <span id="icore-0"></span>
             </td>
             <td>
                <span id="thickness-0"></span>
@@ -129,13 +129,23 @@
       <button type="button" class="btn btn-secondary" onclick="calculate()">Berechnen</button>
     </form>
       <div class="mb-3 row">
-        <label for="totalarea" class="col-sm-2 col-form-label">Fläche</label>
+        <label for="totalArea" class="col-sm-2 col-form-label">Fläche</label>
         <div class="col-sm-2">
           <span id="totalArea"></span>
         </div>
+        <label for="totalVolume" class="col-sm-2 col-form-label">Volumen</label>
+        <div class="col-sm-2">
+          <span id="totalVolume"></span>
+        </div>
       </div>
-    
     </div>
+    
+    <script>
+      if (document.getElementById("profile").value)
+      {
+        handleProfileUpload(document.getElementById("profile"));
+      }
+    </script>
     
   </body>
 </html>
