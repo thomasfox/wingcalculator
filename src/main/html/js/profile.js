@@ -137,11 +137,9 @@ class Profile
 			+ minEncounteredValue + "," + maxEncounteredValue + "]";
 	}
 
-
-	thickness()
+	minY()
 	{
 		let minY;
-		let maxY;
 		for (let point of this.points)
 		{
 			let x = point[0];
@@ -154,6 +152,17 @@ class Profile
 			{
 				minY = Math.min(minY, y);
 			}
+		}
+		return minY;
+	}
+
+	maxY()
+	{
+		let maxY;
+		for (let point of this.points)
+		{
+			let x = point[0];
+			let y = point[1];
 			if (maxY == null)
 			{
 				maxY = y;
@@ -163,7 +172,12 @@ class Profile
 				maxY = Math.max(maxY, y);
 			}
 		}
-		return maxY - minY;
+		return maxY;
+	}
+
+	thickness()
+	{
+		return this.maxY() - this.minY();
 	}
 
 	/**

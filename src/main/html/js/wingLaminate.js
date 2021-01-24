@@ -22,7 +22,7 @@ function crossSectionChanged(inputElement)
 			let profile = window.profiles.get(profileName);
 			let normalizedI = profile.secondMomentOfArea(normalizedCutoffEnd);
 			let i = normalizedI * chord * chord * chord * chord;
-			setResultToSpanElement("iprofile", tableRow, i.toPrecision(3) + "m<sup>4</sup>");
+			setResultToSpanElement("iprofile", tableRow, i.toPrecision(3) + " m<sup>4</sup>");
 			let thickness = profile.thickness()*chord*1000;
 			console.debug("thickness normalized: " + profile.thickness() + " scaled:" + thickness);
 			setResultToSpanElement("thickness", tableRow, thickness.toFixed(1) + " mm");
@@ -36,7 +36,7 @@ function crossSectionChanged(inputElement)
 			let profile = window.profiles.get(profileName);
 			let normalizedI = profile.secondMomentOfAreaOfFoamCore(normalizedFoamCoreThickness);
 			let i = normalizedI * chord * chord * chord * chord;
-			setResultToSpanElement("icore", tableRow, i.toPrecision(3) + "m<sup>4</sup>");
+			setResultToSpanElement("icore", tableRow, i.toPrecision(3) + " m<sup>4</sup>");
 			foamCoreCrossSection = profile.crossSectionOfFoamCore(normalizedFoamCoreThickness)*chord*chord*1000*1000;
 		}
 		let crossSection = profileCrossSection;
@@ -134,7 +134,7 @@ function setResultToInputElement(prefix, rowIndex, value)
 function getElement(prefix, rowIndex)
 {
 	let elementId = prefix;
-	if (!isNaN(rowIndex))
+	if (rowIndex != null && !isNaN(rowIndex))
 	{
 		elementId += "-" + rowIndex;
 	}
@@ -162,6 +162,7 @@ function calculate()
 	let xIndex = xMax;
 	let totalArea = 0;
 	let totalVolume = 0;
+	let foamCoreVolume = 0;
 	let step = getNumberFromInputElement("calculationStep")/1000; // m
 	console.debug("step=" + step + (typeof step));
 	for (i = rowElements.length - 1; i >= 1; i--)
@@ -266,25 +267,37 @@ function calculate()
 
 			let foamCoreCrossSection = profile.crossSectionOfFoamCore(foamCoreThicknessAtHalfStep/chordAtHalfStep)*chordAtHalfStep*chordAtHalfStep;
 			calculated.get(xHalfStep)["crossSectionCore"] = foamCoreCrossSection;
-
 			let totalCrossSection = profileCrossSection - foamCoreCrossSection;
 			calculated.get(xHalfStep)["crossSectionTotal"] = totalCrossSection;
 
+			foamCoreVolume += foamCoreCrossSection * step;
 			totalVolume += totalCrossSection * step;
-			
+					
+			let balancePoint = profile.balancePoint(cutoffEndAtHalfStep/chordAtHalfStep);
+			let balancePointY = balancePoint[1] * chordAtHalfStep
+			calculated.get(xHalfStep)["balancePointY"] = balancePointY;
+
+			let maxTopDinstanceFromBalancePoint = profile.maxY()*chordAtHalfStep - balancePointY;
+			let maxBottomDinstanceFromBalancePoint = balancePointY - profile.minY()*chordAtHalfStep ;
+			calculated.get(xHalfStep)["maxTopDinstanceFromBalancePoint"] = maxTopDinstanceFromBalancePoint;
+			calculated.get(xHalfStep)["maxBottomDinstanceFromBalancePoint"] = maxBottomDinstanceFromBalancePoint;
+
 			xIndex -= step
 		}
-		console.debug("totalArea=" + totalArea + (typeof totalArea));
-		console.debug("totalVolume=" + totalVolume + (typeof totalVolume));
 	}
 	document.getElementById("totalArea").innerHTML = (totalArea * 10000).toFixed(2) + " cm<sup>2</sup>";
 	document.getElementById("totalVolume").innerHTML = (totalVolume * 1000000).toFixed(2) + " cm<sup>3</sup>";
+	document.getElementById("foamCoreVolume").innerHTML = (foamCoreVolume * 1000000).toFixed(2) + " cm<sup>3</sup>";
 	
 	let totalForce = getNumberFromInputElement("totalForce");
 	let e = getNumberFromInputElement("youngsModulus")*1000000;
 	let outerArea = 0;
 	let outerCenterOfForce = null
 	let totalIncreaseOfSlope = 0;
+	let totalMaxRelativeFiberStretch = 0;
+	let totalMaxRelativeFiberStretchXPos = 0;
+	let totalMaxRelativeFiberCompression = 0;
+	let totalMaxRelativeFiberCompressionXPos = 0;
 	for (xStep of calculated.keys())
 	{
 		let calculatedStep = calculated.get(xStep);
@@ -306,26 +319,39 @@ function calculate()
 		calculatedStep.increaseOfSlope = increaseOfSlope;
 		totalIncreaseOfSlope += increaseOfSlope;
 		outerArea += area;
+		
+
+		let maxRelativeFiberStretch = calculatedStep.maxBottomDinstanceFromBalancePoint * increaseOfSlope / step;
+		calculatedStep.maxRelativeFiberStretch = maxRelativeFiberStretch;
+		if (maxRelativeFiberStretch > totalMaxRelativeFiberStretch)
+		{
+			totalMaxRelativeFiberStretch = maxRelativeFiberStretch;
+			totalMaxRelativeFiberStretchXPos = xStep;
+		}
+		let maxRelativeFiberCompression = calculatedStep.maxTopDinstanceFromBalancePoint * increaseOfSlope / step;
+		calculatedStep.maxRelativeFiberCompression = maxRelativeFiberCompression;
+		if (maxRelativeFiberCompression > totalMaxRelativeFiberCompression)
+		{
+			totalMaxRelativeFiberCompression = maxRelativeFiberCompression;
+			totalMaxRelativeFiberCompressionXPos = xStep;
+		}
 	}
 	console.debug("totalIncreaseOfSlope=" + totalIncreaseOfSlope + (typeof totalIncreaseOfSlope));
 	console.debug("outerArea=" + outerArea + (typeof outerArea));
-	
-	let slope = totalIncreaseOfSlope;
-	let totalY = 0;
-	for (xStep of calculated.keys())
+
+	setResultToSpanElement("maxRelativeFiberCompression", null, (totalMaxRelativeFiberCompression*100).toPrecision(2) + " %");
+	setResultToSpanElement("maxRelativeFiberCompressionXPos", null, (totalMaxRelativeFiberCompressionXPos*1000).toFixed(0) + "mm");
+	setResultToSpanElement("maxRelativeFiberStretch", null, (totalMaxRelativeFiberStretch*100).toPrecision(2) + " %");
+	setResultToSpanElement("maxRelativeFiberStretchXPos", null, (totalMaxRelativeFiberStretchXPos*1000).toFixed(0) + "mm");
+
+	let slope = 0;
+	let y = 0;
+	for (xStep of [...calculated.keys()].reverse())
 	{
 		let calculatedStep = calculated.get(xStep);
-		totalY += (slope - (calculatedStep.increaseOfSlope) / 2) * step
-		slope -= calculatedStep.increaseOfSlope;
+		slope += calculatedStep.increaseOfSlope;
+		y += (slope - (calculatedStep.increaseOfSlope) / 2) * step
 		calculatedStep.slope = slope;
-	}
-	console.debug("totalY=" + totalY + (typeof totalY));
-	
-	let y = totalY;
-	for (xStep of calculated.keys())
-	{
-		let calculatedStep = calculated.get(xStep);
-		y -= (calculatedStep.slope - (calculatedStep.increaseOfSlope) / 2) * step
 		calculatedStep.y = y;
 	}
 
@@ -334,7 +360,7 @@ function calculate()
 	for (rowElement of rowElements)
 	{
 		let rowIndex = getRowIndex(rowElement.id);
-		console.debug("rowIndex=" + rowIndex + (typeof rowIndex));
+		//console.debug("rowIndex=" + rowIndex + (typeof rowIndex));
 		let x = Number(document.getElementById("x-" + rowIndex).value)/100;
 		let xStepNextLower = -Number.MAX_SAFE_INTEGER;
 		let xStepNextUpper = Number.MAX_SAFE_INTEGER;
@@ -349,8 +375,8 @@ function calculate()
 				xStepNextLower = xStep;
 			}
 		}
-		console.debug("xStepNextUpper=" + xStepNextUpper + (typeof xStepNextUpper));
-		console.debug("xStepNextLower=" + xStepNextLower + (typeof xStepNextLower));
+		//console.debug("xStepNextUpper=" + xStepNextUpper + (typeof xStepNextUpper));
+		//console.debug("xStepNextLower=" + xStepNextLower + (typeof xStepNextLower));
 		let y = "";
 		let slope = "";
 		if (xStepNextUpper != Number.MAX_SAFE_INTEGER && xStepNextLower != -Number.MAX_SAFE_INTEGER)
@@ -363,23 +389,18 @@ function calculate()
 		else if (xStepNextUpper != Number.MAX_SAFE_INTEGER)
 		{
 			let calculatedUpper = calculated.get(xStepNextUpper);
-			console.debug(calculatedUpper);
 			slope = calculatedUpper.slope + (xStepNextUpper - x) * calculatedUpper.increaseOfSlope;
 			y = calculatedUpper.y + (xStepNextUpper - x) * calculatedUpper.slope;
 		}
 		else if (xStepNextLower != -Number.MAX_SAFE_INTEGER)
 		{
 			let calculatedLower = calculated.get(xStepNextLower);
-			console.debug(calculatedLower);
-			console.debug("calculatedLower.slope=" + calculatedLower.slope + (typeof calculatedLower.slope));
-			console.debug("x=" + x + (typeof x));
-			console.debug("calculatedLower.increaseOfSlope=" + calculatedLower.increaseOfSlope + (typeof calculatedLower.increaseOfSlope));
 			slope = calculatedLower.slope - (x - xStepNextLower) * calculatedLower.increaseOfSlope;
 			y = calculatedLower.y - (xStepNextLower - x) * calculatedLower.slope;
 		}
 		
-		document.getElementById("y-" + rowIndex).innerHTML = (y*1000).toFixed(2) + " mm";
-		document.getElementById("dy:dx-" + rowIndex).innerHTML = (slope*1000).toFixed(2) + " mm/m";
+		setResultToSpanElement("y", rowIndex, (y*1000).toFixed(2) + " mm");
+		setResultToSpanElement("dy:dx", rowIndex, (slope*1000).toFixed(2) + " mm/m");
 	}
 }
 

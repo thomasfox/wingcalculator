@@ -14,9 +14,8 @@
       <h3>Durchbiegung eines Flügels</h3>
     </div>
     <div class="container">
-    <form>
       <div class="mb-3 row">
-        <label for="youngsmodulus" class="col-sm-2 col-form-label">E-Modul</label>
+        <label for="youngsmodulus" class="col-sm-2 col-form-label">E-Modul Laminat</label>
         <div class="col-sm-1">
           <input id="youngsModulus" class="form-control form-control-sm" value="100000">
         </div>
@@ -79,8 +78,7 @@
             </th>
             <th>
                Querschnitt<br/>
-               (abzüglich<br/>
-               Schaumkern)
+               Laminat
             </th>
           <tr>
         </thead>
@@ -127,15 +125,33 @@
       <button type="button" class="btn btn-secondary" onclick="addTableRow()">Zeile hinzufügen</button>
       <button type="button" class="btn btn-secondary" onclick="removeLastTableRow()">Letzte Zeile löschen</button>
       <button type="button" class="btn btn-secondary" onclick="calculate()">Berechnen</button>
-    </form>
-      <div class="mb-3 row">
-        <label for="totalArea" class="col-sm-2 col-form-label">Fläche</label>
-        <div class="col-sm-2">
+    
+      <div class="mb-3 row pt-3">
+        <div class="col-sm-4">
+          <span>Fläche Flügel: </span>
           <span id="totalArea"></span>
         </div>
-        <label for="totalVolume" class="col-sm-2 col-form-label">Volumen</label>
-        <div class="col-sm-2">
-          <span id="totalVolume"></span>
+        <div class="col-sm-4">
+          <span>Volumen Laminat: </span>
+           <span id="totalVolume"></span>
+        </div>
+        <div class="col-sm-4">
+          <span>Volumen Schaumkern: </span>
+          <span id="foamCoreVolume"></span>
+        </div>
+      </div>
+      <div class="mb-3 row pt-3">
+        <div class="col-sm-4">
+          <span>Maximale relative Faserdehnung</span>
+          <span id="maxRelativeFiberStretch"></span>
+          <span> bei x= </span>
+          <span id="maxRelativeFiberStretchXPos"></span>
+        </div>
+        <div class="col-sm-4">
+          <span>Maximale relative Faserstauchung</span>
+          <span id="maxRelativeFiberCompression"></span>
+          <span> bei x= </span>
+          <span id="maxRelativeFiberCompressionXPos"></span>
         </div>
       </div>
     </div>
