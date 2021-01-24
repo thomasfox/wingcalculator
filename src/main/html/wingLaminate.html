@@ -8,49 +8,39 @@
     <link rel="stylesheet" href="css/wingLaminate.css">
   </head>
   <body>
-   <script src="js/profile.js" ></script> 
-   <script src="js/wingLaminate.js" ></script> 
+    <script src="js/profile.js" ></script> 
+    <script src="js/wingLaminate.js" ></script> 
+    <div class="text-center pt-3 pb-3">
+      <h3>Durchbiegung eines Flügels</h3>
+    </div>
     <div class="container">
     <form>
       <div class="mb-3 row">
         <label for="youngsmodulus" class="col-sm-2 col-form-label">E-Modul</label>
-        <div class="col-sm-2">
-          <input id="youngsModulus" class="form-control form-control-sm" value="1000000">
+        <div class="col-sm-1">
+          <input id="youngsModulus" class="form-control form-control-sm" value="100000">
         </div>
-        <div class="col-sm-2">
-          <span>N/mm^2</span>
+        <div class="col-sm-3">
+          <span>N/mm<sup>2</sup></span>
         </div>
-      </div>
-      <div class="mb-3 row">
         <label for="totalweight" class="col-sm-2 col-form-label">Gesamtflächenbelastung</label>
-        <div class="col-sm-2">
+        <div class="col-sm-1">
           <input id="totalForce" class="form-control form-control-sm" value="500">
         </div>
-        <div class="col-sm-2">
+        <div class="col-sm-3">
           <span>N</span>
         </div>
       </div>
       <div class="mb-3 row">
-        <label for="density" class="col-sm-2 col-form-label">Dichte</label>
-        <div class="col-sm-2">
-          <input id="density" class="form-control form-control-sm" value="1,5">
-        </div>
-        <div class="col-sm-2">
-          <span>g/cm^3</span>
-        </div>
-      </div>
-      <div class="mb-3 row">
         <label for="density" class="col-sm-2 col-form-label">Schrittweite Berechnung</label>
-        <div class="col-sm-2">
+        <div class="col-sm-1">
           <input id="calculationStep" class="form-control form-control-sm" value="1">
         </div>
-        <div class="col-sm-2">
+        <div class="col-sm-3">
           <span>mm</span>
         </div>
-      </div>
-      <div class="mb-3 row">
         <label for="density" class="col-sm-2 col-form-label">Profil laden</label>
-        <div class="col-sm-3">
+        <div class="col-sm-4">
           <input id="profile" type="file" class="form-control form-control-sm" onchange="handleProfileUpload(this)">
         </div>
       </div>
@@ -70,13 +60,13 @@
                Dicke<br/>Endleiste<br/>ohne Verstärkung
             </th>
             <th>
-               Trägheitsmoment<br/>2. Ordnung<br/>Profil
+               Flächenträgheits-<br/>moment<br/>Profil
             </th>
             <th>
                Dicke<br/>Schaumkern
             </th>
             <th>
-               Trägheitsmoment<br/>2. Ordnung<br/>Schaumkern
+               Flächenträgheits-<br/>moment<br/>Schaumkern
             </th>
             <th>
                y
@@ -87,6 +77,11 @@
             <th>
                Dicke
             </th>
+            <th>
+               Querschnitt<br/>
+               (abzüglich<br/>
+               Schaumkern)
+            </th>
           <tr>
         </thead>
         <tbody>
@@ -95,24 +90,24 @@
               <input id="x-0" type="text" value="0" class="form-control form-control-sm table-form"/> cm
             </td>
             <td>
-               <input id="chord-0" type="text" value="12" class="form-control form-control-sm table-form" onchange="crosssectionChanged(this)"/> cm
+               <input id="chord-0" type="text" value="12" class="form-control form-control-sm table-form" onchange="crossSectionChanged(this)"/> cm
             </td>
             <td>
-               <select id="profile-0" class="form-control form-control-sm table-form" onchange="updateSelect(this);crosssectionChanged(this)">
+               <select id="profile-0" class="form-control form-control-sm table-form" onchange="updateSelectedAttributeInOptions(this);crossSectionChanged(this)">
                  <option value=""></option>
                </select>
             </td>
             <td>
-               <input id="cutoffEnd-0" type="text" value="0" class="form-control form-control-sm table-form" onchange="crosssectionChanged(this)">mm
+               <input id="cutoffEnd-0" type="text" value="0" class="form-control form-control-sm table-form" onchange="crossSectionChanged(this)">mm
             </td>
             <td>
-               <input id="iprofile-0" type="text" value="0" class="form-control form-control-sm table-form">m^4
+               <input id="iprofile-0" type="text" value="" class="form-control form-control-sm table-form">m<sup>4</sup>
             </td>
             <td>
-               <input id="corethickness-0" type="text" value="8" class="form-control form-control-sm table-form"  onchange="crosssectionChanged(this)"/>mm
+               <input id="corethickness-0" type="text" value="0" class="form-control form-control-sm table-form"  onchange="crossSectionChanged(this)"/>mm
             </td>
             <td>
-               <input id="icore-0" type="text" class="form-control form-control-sm table-form"/>m^4
+               <input id="icore-0" type="text" class="form-control form-control-sm table-form"/>m<sup>4</sup>
             </td>
             <td>
                <span id="y-0"></span>
@@ -122,6 +117,9 @@
             </td>
             <td>
                <span id="thickness-0"></span>
+            </td>
+            <td>
+               <span id="crossSection-0"></span>
             </td>
           </tr>
         </tbody>

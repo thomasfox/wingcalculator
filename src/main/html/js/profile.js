@@ -239,6 +239,40 @@ class Profile
 		return xStep * result / 3;
 	}
 	
+	/**
+	 * Gibt den geometrischen Schwerpunkt des Profils zurück.
+	 *
+	 * @return {Array[2]} erster Wert: x-Wert des geometrischen Schwerpunkts 2. Wert: y-wert des geometrischen Schwerpunkts
+	 */
+	crossSection(cutoffTailAtThickness)
+	{
+		let area = 0;
+		let xStep = 1 / this.CALCULATION_STEPS;
+		let thicknessReached = false;
+		for (let x = xStep / 2; x < 1; x += xStep)
+		{
+			let minY = this.lowerY(x);
+			let maxY = this.upperY(x);
+			let thickness = maxY - minY;
+			if (thickness > cutoffTailAtThickness)
+			{
+				thicknessReached = true; 
+			}
+			else if (thicknessReached && thickness < cutoffTailAtThickness)
+			{
+				break;
+			}
+			let centerY = (minY + maxY) / 2;
+			area += thickness * xStep;
+		}
+		if (!thicknessReached)
+		{
+			throw "thickness " + cutoffTailAtThickness + " was never reached in profile";
+		}
+		return area;
+	}
+
+	
 	balancePointOfFoamCore(foamCoreThickness)
 	{
 		let resultX = 0;
@@ -278,8 +312,51 @@ class Profile
 		return [resultX / area, resultY / area];
 	}
 
+	crossSectionOfFoamCore(foamCoreThickness)
+	{
+		if (foamCoreThickness == 0)
+		{
+			return 0;
+		}
+		let area = 0;
+		let xStep = 1 / this.CALCULATION_STEPS;
+		let foamCoreMinY;
+		let foamCoreMaxY;
+		for (let x = xStep / 2; x < 1; x += xStep)
+		{
+			let minY = this.lowerY(x);
+			let maxY = this.upperY(x);
+			let thickness = maxY - minY;
+			if (thickness >= foamCoreThickness)
+			{
+				if (foamCoreMinY == null)
+				{
+					foamCoreMinY = minY + (thickness - foamCoreThickness)/2;
+					foamCoreMaxY = maxY - (thickness - foamCoreThickness)/2;
+					console.debug("foamCoreMinY:" + foamCoreMinY + " foamCoreMaxY:" + foamCoreMaxY);
+				}
+				thickness = foamCoreThickness; 
+			}
+			if (minY < foamCoreMinY)
+			{
+				minY = foamCoreMinY
+			}
+			if (maxY > foamCoreMaxY)
+			{
+				maxY = foamCoreMaxY
+			}
+			let centerY = (minY + maxY) / 2;
+			area += thickness * xStep;
+		}
+		return area;
+	}
+
 	secondMomentOfAreaOfFoamCore(foamCoreThickness)
 	{
+		if (foamCoreThickness == 0)
+		{
+			return 0;
+		}
 		console.debug("foamCoreThickness:" + foamCoreThickness)
 		let balanceY = this.balancePointOfFoamCore(foamCoreThickness)[1];
 		let result = 0;

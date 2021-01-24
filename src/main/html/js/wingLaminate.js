@@ -4,15 +4,17 @@ let normalizedIMap = new Map([
 ]);
 	
 
-function crosssectionChanged(inputElement)
+function crossSectionChanged(inputElement)
 {
 	let tableRow = inputElement.id.split("-")[1];
-	let profileName = document.getElementById('profile-' + tableRow).value;
+	let profileName = document.getElementById("profile-" + tableRow).value;
 	if (profileName)
 	{
-		let cutoffEnd = Number(document.getElementById('cutoffEnd-' + tableRow).value)/1000;
-		let chord = Number(document.getElementById('chord-' + tableRow).value)/100;
+		let cutoffEnd = getNumberFromInputElement("cutoffEnd",tableRow)/1000;
+		let chord = getNumberFromInputElement("chord", tableRow)/100;
 		console.debug("cutoffEnd: " + cutoffEnd + " chord: " + chord);
+		let profileCrossSection = null;
+		let foamCoreCrossSection = null;
 		if (!isNaN(chord) && !isNaN(cutoffEnd)) 
 		{
 			let normalizedCutoffEnd = cutoffEnd/chord
@@ -20,12 +22,13 @@ function crosssectionChanged(inputElement)
 			let profile = window.profiles.get(profileName);
 			let normalizedI = profile.secondMomentOfArea(normalizedCutoffEnd);
 			let i = normalizedI * chord * chord * chord * chord;
-			document.getElementById('iprofile-' + tableRow).value = i.toPrecision(3);
+			setResultToInputElement("iprofile", tableRow, i.toPrecision(3));
 			let thickness = profile.thickness()*chord*1000;
-			console.debug("thickness: " + profile.thickness() + ":" + thickness);
-			document.getElementById('thickness-' + tableRow).innerHTML = thickness.toFixed(1) + " mm";
+			console.debug("thickness normalized: " + profile.thickness() + " scaled:" + thickness);
+			setResultToSpanElement("thickness", tableRow, thickness.toFixed(1) + " mm");
+			profileCrossSection = profile.crossSection(normalizedCutoffEnd)*chord*chord*1000*1000;
 		}
-		let foamCoreThickness = Number(document.getElementById('corethickness-' + tableRow).value)/1000;
+		let foamCoreThickness = getNumberFromInputElement("corethickness", tableRow)/1000;
 		if (!isNaN(chord) && !isNaN(foamCoreThickness)) 
 		{
 			let normalizedFoamCoreThickness = foamCoreThickness/chord
@@ -33,32 +36,39 @@ function crosssectionChanged(inputElement)
 			let profile = window.profiles.get(profileName);
 			let normalizedI = profile.secondMomentOfAreaOfFoamCore(normalizedFoamCoreThickness);
 			let i = normalizedI * chord * chord * chord * chord;
-			document.getElementById('icore-' + tableRow).value = i.toPrecision(3);
+			setResultToInputElement("icore", tableRow, i.toPrecision(3));
+			foamCoreCrossSection = profile.crossSectionOfFoamCore(normalizedFoamCoreThickness)*chord*chord*1000*1000;
 		}
+		let crossSection = profileCrossSection;
+		if (foamCoreCrossSection != null)
+		{
+			crossSection -= foamCoreCrossSection;
+		}
+		setResultToSpanElement("crossSection", tableRow, crossSection.toFixed(0) + " mm<sup>2</sup>");
 	}
 }
 
 function addTableRow()
 {
-	let tbodyElement = document.getElementById('table').getElementsByTagName('tbody')[0];
-	let rowElements = tbodyElement.getElementsByTagName('tr');
+	let tbodyElement = document.getElementById("table").getElementsByTagName("tbody")[0];
+	let rowElements = tbodyElement.getElementsByTagName("tr");
 	let lastRowElement = rowElements[rowElements.length - 1];
 	let rowIndex = getRowIndex(lastRowElement.id);
 	let newRow = lastRowElement.cloneNode(true);
 	let newRowIndex = parseInt(rowIndex) + 1;
 	newRow.id = setNewRowIndex(lastRowElement.id, newRowIndex);
 	var tdElement;
-	for (tdElement of newRow.getElementsByTagName('td'))
+	for (tdElement of newRow.getElementsByTagName("td"))
 	{
-		for (inputElement of tdElement.getElementsByTagName('input'))
+		for (inputElement of tdElement.getElementsByTagName("input"))
 		{
 			inputElement.id = setNewRowIndex(inputElement.id, newRowIndex);
 		}
-		for (selectElement of tdElement.getElementsByTagName('select'))
+		for (selectElement of tdElement.getElementsByTagName("select"))
 		{
 			selectElement.id = setNewRowIndex(selectElement.id, newRowIndex);
 		}
-		for (spanElement of tdElement.getElementsByTagName('span'))
+		for (spanElement of tdElement.getElementsByTagName("span"))
 		{
 			if (spanElement.id)
 			{
@@ -71,25 +81,24 @@ function addTableRow()
 
 function removeLastTableRow()
 {
-	let tbodyElement = document.getElementById('table').getElementsByTagName('tbody')[0];
-	let rowElements = tbodyElement.getElementsByTagName('tr');
+	let tbodyElement = document.getElementById("table").getElementsByTagName("tbody")[0];
+	let rowElements = tbodyElement.getElementsByTagName("tr");
 	if (rowElements.length == 1)
 	{
-		alert("Letzte Zeile kann nicht gelöscht werden");
+		alert("Die letzte Zeile kann nicht gelöscht werden");
 		return;
 	}
 	let lastRowElement = rowElements[rowElements.length - 1];
 	lastRowElement.remove();
 }
 
-
-function updateSelect(selectElement)
+function updateSelectedAttributeInOptions(selectElement)
 {
-	for (optionsElement of selectElement.getElementsByTagName('option'))
+	for (optionsElement of selectElement.getElementsByTagName("option"))
 	{
 		optionsElement.removeAttribute("selected");
 	}
-	selectElement.options[selectElement.selectedIndex].setAttribute("selected","selected");
+	selectElement.options[selectElement.selectedIndex].setAttribute("selected", "selected");
 }
 
 function getRowIndex(elementId)
@@ -107,56 +116,92 @@ function setNewRowIndex(elementId, newRowIndex)
 	return getIdPrefix(elementId) + "-" + newRowIndex;
 }
 
+function getNumberFromInputElement(prefix, rowIndex)
+{
+	return Number(getElement(prefix, rowIndex).value)
+}
+
+function setResultToSpanElement(prefix, rowIndex, value)
+{
+	getElement(prefix, rowIndex).innerHTML = value;
+}
+
+function setResultToInputElement(prefix, rowIndex, value)
+{
+	getElement(prefix, rowIndex).value = value;
+}
+
+function getElement(prefix, rowIndex)
+{
+	let elementId = prefix;
+	if (!isNaN(rowIndex))
+	{
+		elementId += "-" + rowIndex;
+	}
+	const result = document.getElementById(elementId);
+	if (!result)
+	{
+		console.warn("Could not find element with id " + elementId)
+	}
+	return result;
+}
 
 function calculate()
 {
-	let tbodyElement = document.getElementById('table').getElementsByTagName('tbody')[0];
-	let rowElements = tbodyElement.getElementsByTagName('tr');
-	let xMax = Number(document.getElementById("x-" + (rowElements.length - 1)).value)/100; // in m
+	let tbodyElement = document.getElementById("table").getElementsByTagName("tbody")[0];
+	let rowElements = tbodyElement.getElementsByTagName("tr");
+	if (rowElements.length <= 1)
+	{
+		alert("Es müssen mindestens zwei Zeilen vorhanden sein. Fügen Sie eine weitere Zeile hinzu.");
+		return;
+	}
+	let xMax = getNumberFromInputElement("x", rowElements.length - 1)/100; // in m
 	console.debug("xMax=" + xMax + (typeof xMax));
 	
 	let calculated = new Map();
 	let xIndex = xMax;
 	let totalArea = 0;
 	calculationStep
-	let step = Number(document.getElementById("calculationStep").value)/1000; // m
+	let step = getNumberFromInputElement("calculationStep")/1000; // m
 	console.debug("step=" + step + (typeof step));
-	for (i = rowElements.length -1; i >=1; i--)
+	for (i = rowElements.length - 1; i >= 1; i--)
 	{
 		let rowElement = rowElements[i];
 		let rowIndex = getRowIndex(rowElement.id);
+		console.debug("rowIndex=" + rowIndex + (typeof rowIndex));
 		let nextRowIndex = i - 1;
 		let nextRowElement = document.getElementById(setNewRowIndex(rowElement.id, nextRowIndex));
-		let x =  Number(document.getElementById("x-" + rowIndex).value)/100;
-		let xNext = Number(document.getElementById("x-" + nextRowIndex).value)/100;
+		console.debug("nextRowIndex=" + nextRowIndex + (typeof nextRowIndex));
+		let x = getNumberFromInputElement("x", rowIndex)/100;
+		let xNext = getNumberFromInputElement("x", nextRowIndex)/100;
 		console.debug("x=" + x + (typeof x));
 		console.debug("xNext=" + xNext + (typeof xNext));
-		if ((typeof x)!='number' || (typeof xNext)!='number')
+		if (isNaN(x) || isNaN(xNext))
 		{
-			alert("Die x-Werte müssen gefüllt sein");
-			break;
+			alert("Die x-Werte müssen mit Zahlen gefüllt sein");
+			return;
 		}
 		if (x <= xNext)
 		{
 			alert("Die x-Werte müssen aufsteigend sein");
-			break;
+			return;
 		}
-		let chord = Number(document.getElementById("chord-" + rowIndex).value)/100;
-		let chordNext = Number(document.getElementById("chord-" + nextRowIndex).value)/100;
-		if ((typeof chord)!='number' || (typeof chordNext)!='number')
+		let chord = getNumberFromInputElement("chord", rowIndex)/100;
+		let chordNext = getNumberFromInputElement("chord", nextRowIndex)/100;
+		if (isNaN(chord) || isNaN(chordNext))
 		{
-			alert("Die Profiltiefe-Werte müssen gefüllt sein");
-			break;
+			alert("Die Profiltiefe-Werte müssen mit Zahlen gefüllt sein");
+			return;
 		}
 		if (chord < 0 || chordNext < 0)
 		{
 			alert("Die Profiltiefe-Werte müssen größer oder gleich 0 sein");
-			break;
+			return;
 		}
 		
-		let iProfile = Number(document.getElementById("iprofile-" + rowIndex).value);
+		let iProfile = getNumberFromInputElement("iprofile", rowIndex);
 		console.debug("iProfile=" + iProfile + (typeof iProfile));
-		let iCore = Number(document.getElementById("icore-" + rowIndex).value);
+		let iCore = getNumberFromInputElement("icore",rowIndex);
 		let iTotal;
 		if (iCore)
 		{
@@ -166,12 +211,17 @@ function calculate()
 		{
 			iTotal = iProfile;
 		}
+		if (!iTotal)
+		{
+			alert("Die Flächenträgheitsmomente des Profils müssen gefüllt und größer als 0 sein. Laden Sie ein Profil hoch und wählen es in der Profilauswahl aus, oder geben Sie manuell die Trägheitsmomente ein.");
+			return;
+		}
 		console.debug("iTotal=" + iTotal+ (typeof iTotal));
 		let iTotal4throot=Math.sqrt(Math.sqrt(iTotal));
 		
-		let iProfileNext = Number(document.getElementById("iprofile-" + nextRowIndex).value);
+		let iProfileNext = getNumberFromInputElement("iprofile", nextRowIndex);
 		console.debug("iProfileNext=" + iProfileNext + (typeof iProfileNext));
-		let iCoreNext = Number(document.getElementById("icore-" + nextRowIndex).value);
+		let iCoreNext = getNumberFromInputElement("icore", nextRowIndex);
 		let iTotalNext;
 		if (iCoreNext)
 		{
@@ -190,10 +240,10 @@ function calculate()
 			
 			chordAtHalfStep = (chord * (xHalfStep - xNext) + chordNext*(x - xHalfStep))/(x - xNext);
 			calculated.set(xHalfStep, new Object());
-			calculated.get(xHalfStep)['chord'] = chordAtHalfStep;
+			calculated.get(xHalfStep)["chord"] = chordAtHalfStep;
 			
 			let area = chordAtHalfStep * step;
-			calculated.get(xHalfStep)['area'] = area;
+			calculated.get(xHalfStep)["area"] = area;
 			totalArea += area;
 			
 			// We assume that the change in dimensions between x and xNext is a linear one.
@@ -201,7 +251,7 @@ function calculate()
 			// in the 4th root of iTotal
 			let iTotal4throotAtHalfStep =(iTotal4throot * (xHalfStep - xNext) + iTotal4throotNext*(x - xHalfStep))/(x - xNext);
 			let iTotalAtHalfStep=iTotal4throotAtHalfStep*iTotal4throotAtHalfStep*iTotal4throotAtHalfStep*iTotal4throotAtHalfStep;
-			calculated.get(xHalfStep)['iTotal'] = iTotalAtHalfStep;
+			calculated.get(xHalfStep)["iTotal"] = iTotalAtHalfStep;
 			
 			xIndex -= step
 		}
@@ -209,8 +259,8 @@ function calculate()
 	}
 	document.getElementById("totalArea").innerHTML = (totalArea * 10000).toFixed(2) + " cm^2";
 	
-	let totalForce = Number(document.getElementById("totalForce").value);
-	let e = Number(document.getElementById("youngsModulus").value)*1000000;
+	let totalForce = getNumberFromInputElement("totalForce");
+	let e = getNumberFromInputElement("youngsModulus")*1000000;
 	let outerArea = 0;
 	let outerCenterOfForce = null
 	let totalIncreaseOfSlope = 0;
@@ -352,12 +402,6 @@ function calculate()
 			iTotalPrevious = iProfilePrevious;
 		}
 		console.info("iTotalPrevious=" + iTotalPrevious + (typeof iTotalPrevious));
-
-		if (!iTotal || !iTotalPrevious)
-		{
-			alert("Die Trägheitsmomente 2.Ordnung des Profils müssen gefüllt sein");
-			break;
-		}
 		
 	
 		// TODO extrapolate
@@ -411,7 +455,6 @@ function storeProfile(name, datContent)
 			continue;
 		}
 		let coordinates = line.trim().split(/\s+/);
-		console.log(coordinates.length);
 		if (coordinates.length != 2)
 		{
 			alert("Wrong line in .dat file: " + line);
@@ -437,16 +480,16 @@ function storeProfile(name, datContent)
 	}
 	window.profiles.set(name, new Profile(name, profileCoordinates));
 	
-	let tbodyElement = document.getElementById('table').getElementsByTagName('tbody')[0];
-	let rowElements = tbodyElement.getElementsByTagName('tr');
+	let tbodyElement = document.getElementById("table").getElementsByTagName("tbody")[0];
+	let rowElements = tbodyElement.getElementsByTagName("tr");
 	for (rowElement of rowElements)
 	{
 		let rowIndex = getRowIndex(rowElement.id);
-		let profileElement = document.getElementById('profile-' + rowIndex);
+		let profileElement = document.getElementById("profile-" + rowIndex);
 		let option = document.createElement("option");
 		option.setAttribute("value", name);
 		option.innerHTML = name
 		profileElement.appendChild(option);
 	}
-    console.log(window.profiles.get(name).secondMomentOfArea(0));
+    console.log("normalized second moment of area of "+ name + " is " + window.profiles.get(name).secondMomentOfArea(0));
 }
