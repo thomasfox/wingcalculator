@@ -340,9 +340,10 @@ function calculate()
 	console.debug("outerArea=" + outerArea + (typeof outerArea));
 
 	setResultToSpanElement("maxRelativeFiberCompression", null, (totalMaxRelativeFiberCompression*100).toPrecision(2) + " %");
-	setResultToSpanElement("maxRelativeFiberCompressionXPos", null, (totalMaxRelativeFiberCompressionXPos*1000).toFixed(0) + "mm");
+	setResultToSpanElement("maxRelativeFiberCompressionXPos", null, (totalMaxRelativeFiberCompressionXPos*1000).toFixed(0) + " mm");
 	setResultToSpanElement("maxRelativeFiberStretch", null, (totalMaxRelativeFiberStretch*100).toPrecision(2) + " %");
-	setResultToSpanElement("maxRelativeFiberStretchXPos", null, (totalMaxRelativeFiberStretchXPos*1000).toFixed(0) + "mm");
+	setResultToSpanElement("maxRelativeFiberStretchXPos", null, (totalMaxRelativeFiberStretchXPos*1000).toFixed(0) + " mm");
+	setResultToSpanElement("momentumOfWingAtX0", null, (outerCenterOfForce * totalForce).toFixed(0) + " Nm");
 
 	let slope = 0;
 	let y = 0;
