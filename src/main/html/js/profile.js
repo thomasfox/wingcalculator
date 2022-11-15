@@ -1,5 +1,6 @@
 class Profile
 {
+	// how many x positions are considered for calculating cross-section and second moment of area
 	CALCULATION_STEPS = 50;
 	name;
 	points;
@@ -191,9 +192,11 @@ class Profile
 		let resultY = 0;
 		let area = 0;
 		let xStep = 1 / this.CALCULATION_STEPS;
+		//console.debug("xStep=" + xStep);
 		let thicknessReached = false;
 		for (let x = xStep / 2; x < 1; x += xStep)
 		{
+			//console.debug("x=" + x);
 			let minY = this.lowerY(x);
 			let maxY = this.upperY(x);
 			let thickness = maxY - minY;
@@ -206,6 +209,7 @@ class Profile
 				break;
 			}
 			let centerY = (minY + maxY) / 2;
+			//console.debug("thickness=" + thickness);
 			area += thickness * xStep;
 			resultX += x * thickness * xStep;
 			resultY += centerY * thickness * xStep;
@@ -214,6 +218,7 @@ class Profile
 		{
 			throw "thickness " + cutoffTailAtThickness + " was never reached in profile";
 		}
+		// console.debug("result is= [" + (resultX / area) + "," + (resultY / area) + "]");
 		return [resultX / area, resultY / area];
 	}
 	
@@ -289,6 +294,7 @@ class Profile
 	
 	balancePointOfFoamCore(foamCoreThickness)
 	{
+		//console.debug("balancePointOfFoamCore(" + foamCoreThickness + ")");
 		let resultX = 0;
 		let resultY = 0;
 		let area = 0;
@@ -323,6 +329,7 @@ class Profile
 			resultX += x * thickness * xStep;
 			resultY += centerY * thickness * xStep;
 		}
+		//console.debug("balancePointOfFoamCore result: [" + (resultX / area) + "," + (resultY / area) + "]");
 		return [resultX / area, resultY / area];
 	}
 
@@ -367,11 +374,12 @@ class Profile
 
 	secondMomentOfAreaOfFoamCore(foamCoreThickness)
 	{
+		//console.debug("secondMomentOfAreaOfFoamCore(" + foamCoreThickness + ")");
 		if (foamCoreThickness == 0)
 		{
+			//console.debug("secondMomentOfAreaOfFoamCore result: 0");
 			return 0;
 		}
-		//console.debug("foamCoreThickness:" + foamCoreThickness)
 		let balanceY = this.balancePointOfFoamCore(foamCoreThickness)[1];
 		let result = 0;
 		let xStep = 1 / this.CALCULATION_STEPS;
@@ -386,8 +394,10 @@ class Profile
 			{
 				if (foamCoreMinY == null)
 				{
-					foamCoreMinY = minY + (maxY - minY - thickness)/2;
-					foamCoreMaxY = maxY - (maxY - minY - thickness)/2;
+					foamCoreMinY = minY + (thickness - foamCoreThickness)/2;
+					foamCoreMaxY = maxY - (thickness - foamCoreThickness)/2;
+					//console.debug("foamCoreMinY:" + foamCoreMinY);
+					//console.debug("foamCoreMaxY:" + foamCoreMaxY);
 				}
 				thickness = foamCoreThickness; 
 			}
@@ -405,7 +415,7 @@ class Profile
 			result += (distance1FromCenter * distance1FromCenter * distance1FromCenter)
 				+ (distance2FromCenter *distance2FromCenter * distance2FromCenter);
 		}
+		//console.debug("secondMomentOfAreaOfFoamCore result: " + (xStep * result / 3));
 		return xStep * result / 3;
 	}
-
 }
