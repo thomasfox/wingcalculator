@@ -13,153 +13,177 @@
     <div class="text-center pt-3 pb-3">
       <h3>Durchbiegung eines Flügels</h3>
     </div>
-    <div class="container">
-      <div class="mb-3 row">
-        <label for="youngsmodulus" class="col-sm-2 col-form-label">E-Modul Laminat</label>
-        <div class="col-sm-1">
-          <input id="youngsModulus" class="form-control form-control-sm" value="100000">
+    <form id="form" class="needs-validation" novalidate>
+      <div class="container">
+        <div class="mb-3 row">
+          <label for="youngsmodulus" class="col-sm-2 col-form-label">E-Modul Laminat</label>
+          <div class="col-sm-1">
+            <input id="youngsModulus" class="form-control form-control-sm" value="100000"/>
+          </div>
+          <div class="col-sm-3">
+            <span>N/mm<sup>2</sup></span>
+          </div>
+          <label for="totalForce" class="col-sm-2 col-form-label">Gesamtbelastung</label>
+          <div class="col-sm-1">
+            <input id="totalForce" class="form-control form-control-sm" value="500"/>
+          </div>
+          <div class="col-sm-1">
+            <span>N</span>
+          </div>
+          <div class="col-sm-2">
+            <fieldset>
+              <input type="radio" id="areaForceType" name="forceType" value="area" checked>
+              <label for="areaForceType">Fläche</label>
+              <input type="radio" id="endForceType" name="forceType" value="end">
+              <label for="endForceType">Ende</label>
+            </fieldset>
+          </div>
         </div>
-        <div class="col-sm-3">
-          <span>N/mm<sup>2</sup></span>
+        <div class="mb-3 row">
+          <label for="calculationStep" class="col-sm-2 col-form-label">Schrittweite Berechnung</label>
+          <div class="col-sm-1">
+            <input id="calculationStep" class="form-control form-control-sm" value="1"/>
+          </div>
+          <div class="col-sm-3">
+            <span>mm</span>
+          </div>
+          <label for="profile" class="col-sm-2 col-form-label">Profil laden</label>
+          <div class="col-sm-4">
+            <input id="profile" type="file" class="form-control form-control-sm" onchange="handleProfileUpload(this)">
+          </div>
         </div>
-        <label for="totalweight" class="col-sm-2 col-form-label">Gesamtflächenbelastung</label>
-        <div class="col-sm-1">
-          <input id="totalForce" class="form-control form-control-sm" value="500">
+        <table class="table table-sm" id="table">
+          <thead>
+            <tr>
+              <th>
+                 x
+              </th>
+              <th>
+                 Profiltiefe
+              </th>
+              <th>
+                 Profil
+              </th>
+              <th>
+                 Dicke<br/>Endleiste<br/>ohne Verstärkung
+              </th>
+              <th>
+                 Dicke<br/>Schaumkern
+              </th>
+              <th>
+                 y
+              </th>
+              <th>
+                 dy/dx
+              </th>
+              <th>
+                 Flächenträgheits-<br/>moment<br/>Profil
+              </th>
+              <th>
+                 Flächenträgheits-<br/>moment<br/>Schaumkern
+              </th>
+              <th>
+                 Dicke
+              </th>
+              <th>
+                 Querschnitt<br/>
+                 Laminat
+              </th>
+            <tr>
+          </thead>
+          <tbody>
+            <tr id="tablerow-0">
+              <td>
+                <input id="x-0" type="text" value="0" class="form-control form-control-sm table-form"/> cm
+                <div class="invalid-feedback">
+                  Die x-Werte müssen Zahlen und aufsteigend geordnet sein
+                </div>
+              </td>
+              <td>
+                <input id="chord-0" type="text" value="12" class="form-control form-control-sm table-form" onchange="crossSectionChanged(this)"/> cm
+                <div class="invalid-feedback">
+                  Der Wert muss eine Zahl größer oder gleich 0 sein
+                </div>
+              </td>
+              <td>
+                 <select id="profile-0" class="form-control form-control-sm table-form" onchange="updateSelectedAttributeInOptions(this);crossSectionChanged(this)">
+                   <option value=""></option>
+                 </select>
+                <div class="invalid-feedback">
+                  Es muss ein Profil ausgewählt sein
+                </div>
+              </td>
+              <td>
+                 <input id="cutoffEnd-0" type="text" value="0" class="form-control form-control-sm table-form" onchange="crossSectionChanged(this)">mm
+                <div class="invalid-feedback">
+                  Der Wert muss eine Zahl größer oder gleich 0 sein
+                </div>
+              </td>
+              <td>
+                 <input id="corethickness-0" type="text" value="0" class="form-control form-control-sm table-form"  onchange="crossSectionChanged(this)"/>mm
+                <div class="invalid-feedback">
+                  Der Wert muss eine Zahl größer oder gleich 0 sein
+                </div>
+              </td>
+              <td>
+                 <span id="y-0"></span>
+              </td>
+              <td>
+                 <span id="dy:dx-0"></span>
+              </td>
+              <td>
+                 <span id="iprofile-0"></span>
+              </td>
+              <td>
+                 <span id="icore-0"></span>
+              </td>
+              <td>
+                 <span id="thickness-0"></span>
+              </td>
+              <td>
+                 <span id="crossSection-0"></span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <button type="button" class="btn btn-secondary" onclick="addTableRow()">Zeile hinzufügen</button>
+        <button type="button" class="btn btn-secondary" onclick="removeLastTableRow()">Letzte Zeile löschen</button>
+        <button type="button" class="btn btn-secondary" onclick="calculate()">Berechnen</button>
+
+        <div class="mb-3 row pt-3">
+          <div class="col-sm-4">
+            <span>Fläche Flügel: </span>
+            <span id="totalArea"></span>
+          </div>
+          <div class="col-sm-4">
+            <span>Volumen Laminat: </span>
+             <span id="totalVolume"></span>
+          </div>
+          <div class="col-sm-4">
+            <span>Volumen Schaumkern: </span>
+            <span id="foamCoreVolume"></span>
+          </div>
         </div>
-        <div class="col-sm-3">
-          <span>N</span>
+        <div class="mb-3 row pt-3">
+          <div class="col-sm-4">
+            <span>Maximale relative Faserdehnung</span>
+            <span id="maxRelativeFiberStretch"></span>
+            <span> bei x= </span>
+            <span id="maxRelativeFiberStretchXPos"></span>
+          </div>
+          <div class="col-sm-4">
+            <span>Maximale relative Faserstauchung</span>
+            <span id="maxRelativeFiberCompression"></span>
+            <span> bei x= </span>
+            <span id="maxRelativeFiberCompressionXPos"></span>
+          </div>
+          <div class="col-sm-4">
+            <span>Drehmoment bei x=0: </span>
+            <span id="momentumOfWingAtX0"></span>
+          </div>
         </div>
       </div>
-      <div class="mb-3 row">
-        <label for="density" class="col-sm-2 col-form-label">Schrittweite Berechnung</label>
-        <div class="col-sm-1">
-          <input id="calculationStep" class="form-control form-control-sm" value="1">
-        </div>
-        <div class="col-sm-3">
-          <span>mm</span>
-        </div>
-        <label for="density" class="col-sm-2 col-form-label">Profil laden</label>
-        <div class="col-sm-4">
-          <input id="profile" type="file" class="form-control form-control-sm" onchange="handleProfileUpload(this)">
-        </div>
-      </div>
-      <table class="table table-sm" id="table">
-        <thead>
-          <tr>
-            <th>
-               x
-            </th>
-            <th>
-               Profiltiefe
-            </th>
-            <th>
-               Profil
-            </th>
-            <th>
-               Dicke<br/>Endleiste<br/>ohne Verstärkung
-            </th>
-            <th>
-               Dicke<br/>Schaumkern
-            </th>
-            <th>
-               y
-            </th>
-            <th>
-               dy/dx
-            </th>
-            <th>
-               Flächenträgheits-<br/>moment<br/>Profil
-            </th>
-            <th>
-               Flächenträgheits-<br/>moment<br/>Schaumkern
-            </th>
-            <th>
-               Dicke
-            </th>
-            <th>
-               Querschnitt<br/>
-               Laminat
-            </th>
-          <tr>
-        </thead>
-        <tbody>
-          <tr id="tablerow-0">
-            <td>
-              <input id="x-0" type="text" value="0" class="form-control form-control-sm table-form"/> cm
-            </td>
-            <td>
-               <input id="chord-0" type="text" value="12" class="form-control form-control-sm table-form" onchange="crossSectionChanged(this)"/> cm
-            </td>
-            <td>
-               <select id="profile-0" class="form-control form-control-sm table-form" onchange="updateSelectedAttributeInOptions(this);crossSectionChanged(this)">
-                 <option value=""></option>
-               </select>
-            </td>
-            <td>
-               <input id="cutoffEnd-0" type="text" value="0" class="form-control form-control-sm table-form" onchange="crossSectionChanged(this)">mm
-            </td>
-            <td>
-               <input id="corethickness-0" type="text" value="0" class="form-control form-control-sm table-form"  onchange="crossSectionChanged(this)"/>mm
-            </td>
-            <td>
-               <span id="y-0"></span>
-            </td>
-            <td>
-               <span id="dy:dx-0"></span>
-            </td>
-            <td>
-               <span id="iprofile-0"></span>
-            </td>
-            <td>
-               <span id="icore-0"></span>
-            </td>
-            <td>
-               <span id="thickness-0"></span>
-            </td>
-            <td>
-               <span id="crossSection-0"></span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <button type="button" class="btn btn-secondary" onclick="addTableRow()">Zeile hinzufügen</button>
-      <button type="button" class="btn btn-secondary" onclick="removeLastTableRow()">Letzte Zeile löschen</button>
-      <button type="button" class="btn btn-secondary" onclick="calculate()">Berechnen</button>
-    
-      <div class="mb-3 row pt-3">
-        <div class="col-sm-4">
-          <span>Fläche Flügel: </span>
-          <span id="totalArea"></span>
-        </div>
-        <div class="col-sm-4">
-          <span>Volumen Laminat: </span>
-           <span id="totalVolume"></span>
-        </div>
-        <div class="col-sm-4">
-          <span>Volumen Schaumkern: </span>
-          <span id="foamCoreVolume"></span>
-        </div>
-      </div>
-      <div class="mb-3 row pt-3">
-        <div class="col-sm-4">
-          <span>Maximale relative Faserdehnung</span>
-          <span id="maxRelativeFiberStretch"></span>
-          <span> bei x= </span>
-          <span id="maxRelativeFiberStretchXPos"></span>
-        </div>
-        <div class="col-sm-4">
-          <span>Maximale relative Faserstauchung</span>
-          <span id="maxRelativeFiberCompression"></span>
-          <span> bei x= </span>
-          <span id="maxRelativeFiberCompressionXPos"></span>
-        </div>
-        <div class="col-sm-4">
-          <span>Drehmoment bei x=0: </span>
-          <span id="momentumOfWingAtX0"></span>
-        </div>
-      </div>
-    </div>
-    
+    </form>
     <script>
       if (document.getElementById("profile").value)
       {

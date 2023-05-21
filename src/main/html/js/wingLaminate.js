@@ -2,7 +2,6 @@ let normalizedIMap = new Map([
 	["e224",0.0000400], 
 	["n63014",0.000101], 
 ]);
-	
 
 function crossSectionChanged(inputElement)
 {
@@ -50,6 +49,7 @@ function crossSectionChanged(inputElement)
 
 function addTableRow()
 {
+	document.getElementById("form").classList.remove("was-validated");
 	let tbodyElement = document.getElementById("table").getElementsByTagName("tbody")[0];
 	let rowElements = tbodyElement.getElementsByTagName("tr");
 	let lastRowElement = rowElements[rowElements.length - 1];
@@ -81,6 +81,7 @@ function addTableRow()
 
 function removeLastTableRow()
 {
+	document.getElementById("form").classList.remove("was-validated");
 	let tbodyElement = document.getElementById("table").getElementsByTagName("tbody")[0];
 	let rowElements = tbodyElement.getElementsByTagName("tr");
 	if (rowElements.length == 1)
@@ -118,7 +119,19 @@ function setNewRowIndex(elementId, newRowIndex)
 
 function getNumberFromInputElement(prefix, rowIndex)
 {
-	return Number(getElement(prefix, rowIndex).value)
+	let element = getElement(prefix, rowIndex)
+	let value = Number(element.value)
+	if (isNaN(value))
+	{
+		setInputInvalid(prefix, rowIndex,'"' + value + '" is not a number.')
+	}
+	return value
+}
+
+function setInputInvalid(prefix, rowIndex, message)
+{
+	let element = getElement(prefix, rowIndex)
+	element.setCustomValidity(message)
 }
 
 function setResultToSpanElement(prefix, rowIndex, value)
@@ -146,8 +159,24 @@ function getElement(prefix, rowIndex)
 	return result;
 }
 
+function clearCustomValidationMessages()
+{
+    let inputs = document.getElementsByTagName('input');
+    for (index = 0; index < inputs.length; ++index)
+    {
+        inputs[index].setCustomValidity("");
+    }
+    let selects = document.getElementsByTagName('select');
+    for (index = 0; index < selects.length; ++index)
+    {
+        selects[index].setCustomValidity("");
+    }
+}
+
 function calculate()
 {
+    clearCustomValidationMessages();
+
 	let tbodyElement = document.getElementById("table").getElementsByTagName("tbody")[0];
 	let rowElements = tbodyElement.getElementsByTagName("tr");
 	if (rowElements.length <= 1)
@@ -165,6 +194,8 @@ function calculate()
 	let foamCoreVolume = 0;
 	let step = getNumberFromInputElement("calculationStep")/1000; // m
 	console.debug("step=" + step + (typeof step));
+
+	let invalid = false;
 	for (i = rowElements.length - 1; i >= 1; i--)
 	{
 		let rowElement = rowElements[i];
@@ -177,64 +208,79 @@ function calculate()
 		let xNext = getNumberFromInputElement("x", nextRowIndex)/100;
 		console.debug("x=" + x + (typeof x));
 		console.debug("xNext=" + xNext + (typeof xNext));
-		if (isNaN(x) || isNaN(xNext))
-		{
-			alert("Die x-Werte müssen mit Zahlen gefüllt sein");
-			return;
-		}
 		if (x <= xNext)
 		{
-			alert("Die x-Werte müssen aufsteigend sein");
-			return;
+			setInputInvalid("x", rowIndex, "Die Werte müssen aufsteigend sein");
 		}
 		let chord = getNumberFromInputElement("chord", rowIndex)/100;
-		let chordNext = getNumberFromInputElement("chord", nextRowIndex)/100;
-		if (isNaN(chord) || isNaN(chordNext))
+		if (chord < 0)
 		{
-			alert("Die Profiltiefe-Werte müssen mit Zahlen gefüllt sein");
-			return;
+			setInputInvalid("chord", rowIndex, "Der Wert muss größer oder gleich 0 sein");
 		}
-		if (chord < 0 || chordNext < 0)
+		let chordNext = getNumberFromInputElement("chord", nextRowIndex)/100;
+		if (chordNext < 0)
 		{
-			alert("Die Profiltiefe-Werte müssen größer oder gleich 0 sein");
-			return;
+			setInputInvalid("chord", nextRowIndex, "Der Wert muss größer oder gleich 0 sein");
 		}
 		
 		let cutoffEnd = getNumberFromInputElement("cutoffEnd", rowIndex)/1000;
+		if (cutoffEnd < 0)
+		{
+			setInputInvalid("cutoffEnd", rowIndex, "Der Wert muss größer oder gleich 0 sein");
+		}
 		let cutoffEndNext = getNumberFromInputElement("cutoffEnd", nextRowIndex)/1000;
+		if (cutoffEndNext < 0)
+		{
+			setInputInvalid("cutoffEnd", nextRowIndex, "Der Wert muss größer oder gleich 0 sein");
+		}
 		console.debug("cutoffEnd: " + cutoffEnd + " cutoffEndNext: " + cutoffEndNext);
 		let profileCrossSection = null;
 		let foamCoreCrossSection = null;
-		
-		if (isNaN(cutoffEnd) || isNaN(cutoffEndNext)) 
-		{
-			alert("Die Dicke der Endleiste muss gesetzt sein");
-		}
-		if (cutoffEnd < 0  || cutoffEndNext < 0) 
-		{
-			alert("Die Dicke der Endleiste muss >= 0 sein");
-		}
 
 		let foamCoreThickness = getNumberFromInputElement("corethickness", rowIndex)/1000;
-		let foamCoreThicknessNext = getNumberFromInputElement("corethickness", nextRowIndex)/1000;
-		if (isNaN(foamCoreThickness) || isNaN(foamCoreThicknessNext)) 
+		if (foamCoreThickness < 0)
 		{
-			alert("Die Dicke des Schaumkerns muss gesetzt sein");
+			setInputInvalid("corethickness", rowIndex, "Der Wert muss größer oder gleich 0 sein");
 		}
-		if (foamCoreThickness < 0  || foamCoreThicknessNext < 0) 
+		let foamCoreThicknessNext = getNumberFromInputElement("corethickness", nextRowIndex)/1000;
+		if (foamCoreThicknessNext < 0)
 		{
-			alert("Die Dicke des Schaumkerns muss >= 0 sein");
+			setInputInvalid("corethickness", nextRowIndex, "Der Wert muss größer oder gleich 0 sein");
 		}
 		
 		let profileName = document.getElementById("profile-" + rowIndex).value;
-		let profile = window.profiles.get(profileName);
-		let profileNameNext = document.getElementById("profile-" + nextRowIndex).value;
-		let profileNext = window.profiles.get(profileNameNext);
-		if (!profile || !profileNext) 
+		if (!profileName)
 		{
-			alert("Die Profile müssen gesetzt sein");
+			setInputInvalid("profile", rowIndex, "Der Wert muss gesetzt sein");
+		}
+		let profileNameNext = document.getElementById("profile-" + nextRowIndex).value;
+		if (!profileNameNext)
+		{
+			setInputInvalid("profile", nextRowIndex, "Der Wert muss gesetzt sein");
+		}
+		if (!window.profiles)
+		{
+			alert("Es muss mindestens ein Profil hochgeladen werden");
+			return;
+		}
+		let profile = window.profiles.get(profileName);
+		let profileNext = window.profiles.get(profileNameNext);
+		if (!profile)
+		{
+			setInputInvalid("profile", rowIndex, "Der Wert muss gesetzt sein");
+		}
+		if (!profileNext)
+		{
+			setInputInvalid("profile", nextRowIndex, "Der Wert muss gesetzt sein");
 		}
 
+	    document.getElementById("form").classList.add("was-validated")
+		invalid = invalid || !document.getElementById("form").checkValidity();
+
+        if (invalid)
+        {
+            continue;
+        }
 	
 		while (xIndex - step >= xNext - 0.001)
 		{
@@ -285,11 +331,17 @@ function calculate()
 			xIndex -= step
 		}
 	}
+	if (invalid)
+	{
+	  return;
+	}
+
 	document.getElementById("totalArea").innerHTML = (totalArea * 10000).toFixed(2) + " cm<sup>2</sup>";
 	document.getElementById("totalVolume").innerHTML = (totalVolume * 1000000).toFixed(2) + " cm<sup>3</sup>";
 	document.getElementById("foamCoreVolume").innerHTML = (foamCoreVolume * 1000000).toFixed(2) + " cm<sup>3</sup>";
 	
 	let totalForce = getNumberFromInputElement("totalForce");
+	let areaForce = document.getElementById("areaForceType").checked;
 	let e = getNumberFromInputElement("youngsModulus")*1000000;
 	let outerArea = 0;
 	let outerCenterOfForce = null
@@ -302,19 +354,30 @@ function calculate()
 	{
 		let calculatedStep = calculated.get(xStep);
 		let area = calculatedStep.area;
-		let force = totalForce * area / totalArea;
-		calculatedStep.force = force;
-		if (outerCenterOfForce == null)
+		if (areaForce)
 		{
-			calculatedStep.momentum = 0;
-			outerCenterOfForce = xStep;
-		}
+		    let force = totalForce * area / totalArea;
+            calculatedStep.force = force;
+            if (outerCenterOfForce == null)
+            {
+                calculatedStep.momentum = 0;
+                outerCenterOfForce = xStep;
+            }
+            else
+            {
+                calculatedStep.momentum = (outerCenterOfForce - xStep) * totalForce * outerArea / totalArea
+                outerCenterOfForce = (outerCenterOfForce * outerArea + xStep * area)/(outerArea + area);
+            }
+            calculatedStep.outerCenterOfForce = outerCenterOfForce;
+        }
 		else
 		{
-			calculatedStep.momentum = (outerCenterOfForce - xStep)* totalForce * outerArea / totalArea
-			outerCenterOfForce = (outerCenterOfForce * outerArea + xStep * area)/(outerArea + area);
-		}
-		calculatedStep.outerCenterOfForce = outerCenterOfForce;
+		    let force = totalForce;
+            calculatedStep.force = force;
+            outerCenterOfForce = xMax;
+            calculatedStep.momentum = (outerCenterOfForce - xStep) * totalForce;
+            calculatedStep.outerCenterOfForce = outerCenterOfForce;
+        }
 		increaseOfSlope = calculatedStep.momentum / (e * calculatedStep.iTotal) * step;
 		calculatedStep.increaseOfSlope = increaseOfSlope;
 		totalIncreaseOfSlope += increaseOfSlope;
